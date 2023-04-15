@@ -20,6 +20,7 @@ CARTERPY_API_KEY=your-api-key
 PLAYER_ID=your-player-id
 PLAYER_NAME=your-player-name
 OPENER=True
+PLAY_SOUND=True
 ```
 
 ## Carter

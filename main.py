@@ -5,8 +5,37 @@ from termcolor import colored
 from art import text2art
 from carterpy import AsyncCarter
 from yaspin import yaspin, Spinner
+import threading
+import asyncio
+import aiohttp
+import pygame.mixer
+import os
+import concurrent.futures
+import requests
+import time
 
-carter_spinner = Spinner(["🧠 Thinking", "🧠 Thinking.", "🧠 Thinking..", "🧠 Thinking..."], 100)
+pygame.mixer.init()
+
+def play_audio_sync(audio_url):
+    r = requests.get(audio_url)
+    content = r.content
+
+    with open('temp.mp3', 'wb') as f:
+        f.write(content)
+
+    pygame.mixer.music.load('temp.mp3')
+    pygame.mixer.music.play()
+
+    duration = pygame.mixer.Sound('temp.mp3').get_length()
+
+    time.sleep(duration + 1)
+
+    pygame.mixer.music.unload()
+    os.remove('temp.mp3')
+
+    return
+
+carter_spinner = Spinner(["🧠 Thinking", "🧠 Thinking.", "🧠 Thinking..", "🧠 Thinking..."], 400)
 
 async def main():
     # Print logo
@@ -31,6 +60,7 @@ async def main():
     player_id = os.getenv("PLAYER_ID")
     char_name = os.getenv("CHAR_NAME")
     opener_needed = os.getenv("OPENER")
+    play_sound = os.getenv("PLAY_SOUND") or False
 
     # Check if API key and player_id are set
     if not api_key:
@@ -59,6 +89,7 @@ async def main():
     if opener_needed:
         with yaspin(carter_spinner) as spinner:
             interaction = await carter.opener(player_id)
+            print(interaction.output_audio)
         print(colored(f"{char_name}: {interaction.output_text}", "green"))
 
     # Main loop
@@ -77,6 +108,7 @@ async def main():
 
         elif user_input == "/history":
             for interaction in carter.history:
+                print("-----")
                 print(interaction)
 
         elif user_input == "/avg_time":
@@ -100,6 +132,10 @@ async def main():
                 interaction = await carter.say(user_input, player_id)
             if interaction.ok:
                 print(colored(f"{char_name}: " + interaction.output_text, "green"))
+                if interaction.output_audio:
+                    if play_sound:
+                        audio_thread = threading.Thread(target=play_audio_sync, args=(interaction.output_audio,))
+                        audio_thread.start()
             else:
                 print(colored(f"Error [{interaction.status_code}]: " + interaction.status_message, "red"))
         else:
