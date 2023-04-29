@@ -89,7 +89,6 @@ async def main():
     if opener_needed:
         with yaspin(carter_spinner) as spinner:
             interaction = await carter.opener(player_id)
-            print(interaction.output_audio)
         print(colored(f"{char_name}: {interaction.output_text}", "green"))
 
     # Main loop
